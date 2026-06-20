@@ -4,9 +4,10 @@ import ImageUploader from './components/ImageUploader';
 import ProductForm from './components/ProductForm';
 import PlatformSelector from './components/PlatformSelector';
 import OutputTypeSelector from './components/OutputTypeSelector';
+import FrameworkSelector from './components/FrameworkSelector';
 import ResultsDisplay from './components/ResultsDisplay';
 import DocumentationModal from './components/DocumentationModal';
-import { Platform, OutputType, ProductBrief, GenerationResponse } from './types';
+import { Platform, OutputType, Framework, ProductBrief, GenerationResponse } from './types';
 import { generateContent } from './services/geminiService';
 import { LOADING_MESSAGES } from './constants';
 
@@ -24,7 +25,10 @@ const App: React.FC = () => {
     productDescription: '',
     sellingPoints: [''],
     callToAction: '',
+    brandVoice: '',
   });
+  // Empty = Auto (AI recommends). Otherwise force these framework(s).
+  const [frameworkOverride, setFrameworkOverride] = useState<Framework[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([
     Platform.TikTok,
     Platform.Instagram,
@@ -65,7 +69,7 @@ const App: React.FC = () => {
     setError(null);
     setResults(null);
     try {
-      const data = await generateContent(brief, images, selectedPlatforms, outputTypes);
+      const data = await generateContent(brief, images, selectedPlatforms, outputTypes, frameworkOverride);
       setResults(data);
       setTimeout(() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err: any) {
@@ -154,6 +158,18 @@ const App: React.FC = () => {
               <p className="text-sm text-gray-400 mb-2">Pick one or more output types.</p>
               <OutputTypeSelector selected={outputTypes} onChange={setOutputTypes} />
             </div>
+          </div>
+
+          {/* Step 5: Framework */}
+          <div className="space-y-3 pt-4 border-t border-gray-800/50">
+            <div className="flex items-center space-x-3">
+              <StepBadge n={5} />
+              <h2 className="text-lg font-semibold text-white">Copywriting Framework</h2>
+            </div>
+            <p className="text-sm text-gray-400 mb-2">
+              Let the AI pick the highest-converting framework, or force your own.
+            </p>
+            <FrameworkSelector selected={frameworkOverride} onChange={setFrameworkOverride} />
           </div>
 
           {/* Action */}

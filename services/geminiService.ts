@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { ProductBrief, Platform, OutputType, GenerationResponse } from '../types';
+import { ProductBrief, Platform, OutputType, Framework, GenerationResponse } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
@@ -84,7 +84,12 @@ const responseSchema = {
   required: ['recommendation', 'outputs'],
 };
 
-const buildPrompt = (brief: ProductBrief, platforms: Platform[], outputs: OutputType[]): string => {
+const buildPrompt = (
+  brief: ProductBrief,
+  platforms: Platform[],
+  outputs: OutputType[],
+  frameworkOverride: Framework[],
+): string => {
   const points = brief.sellingPoints.filter((p) => p.trim()).map((p) => `- ${p}`).join('\n');
   const wantScript = outputs.includes(OutputType.VideoScript);
   const wantCaption = outputs.includes(OutputType.Caption);
@@ -95,6 +100,25 @@ const buildPrompt = (brief: ProductBrief, platforms: Platform[], outputs: Output
   if (wantCaption) requested.push('`caption` + `hashtags`');
   if (wantAd) requested.push('`adCopy` (headline, body, cta)');
 
+  // STEP 2 differs depending on whether the user forced specific frameworks.
+  const step2 =
+    frameworkOverride.length > 0
+      ? `STEP 2 — The user has REQUIRED these framework(s): ${frameworkOverride.join(', ')}. You MUST use only these. ${
+          frameworkOverride.length > 1
+            ? 'Blend them thoughtfully across the copy.'
+            : 'Apply it consistently.'
+        } Set 'recommendation.frameworks' to exactly these and use 'recommendation.rationale' to explain how you applied them to this product + audience.`
+      : `STEP 2 — Choose the best copywriting framework(s) for THIS product and audience:
+- AIDA: Attention → Interest → Desire → Action (broad ads)
+- PAS: Problem → Agitate → Solution (pain-point, high-converting)
+- BAB: Before → After → Bridge (transformation stories)
+- HSO: Hook → Story → Offer (storytelling / personal brand)
+Recommend a single framework when one clearly wins, or COMBINE 2+ only when blending them clearly produces stronger copy. Explain your choice in 'recommendation'.`;
+
+  const toneLine = brief.brandVoice.trim()
+    ? `- Brand voice / tone: ${brief.brandVoice.trim()} (apply this tone consistently across ALL copy)`
+    : '- Brand voice / tone: (match the mood of the product and audience)';
+
   return `You are an elite direct-response copywriter and short-form video strategist.
 
 The user has uploaded up to 5 product photos (attached) plus this brief:
@@ -104,15 +128,11 @@ The user has uploaded up to 5 product photos (attached) plus this brief:
 - Main selling points:
 ${points || '(infer the strongest benefits from the description and images)'}
 - Desired call-to-action: ${brief.callToAction || '(choose the most fitting CTA)'}
+${toneLine}
 
 STEP 1 — Look closely at the attached product images. Use what you SEE (materials, use-case, mood, who it's for) together with the brief.
 
-STEP 2 — Choose the best copywriting framework(s) for THIS product and audience:
-- AIDA: Attention → Interest → Desire → Action (broad ads)
-- PAS: Problem → Agitate → Solution (pain-point, high-converting)
-- BAB: Before → After → Bridge (transformation stories)
-- HSO: Hook → Story → Offer (storytelling / personal brand)
-Recommend a single framework when one clearly wins, or COMBINE 2+ only when blending them clearly produces stronger copy. Explain your choice in 'recommendation'.
+${step2}
 
 STEP 3 — For EACH of these platforms, write content: ${platforms.join(', ')}.
 For every platform, produce ONLY these output fields: ${requested.join(', ')}.
@@ -128,6 +148,7 @@ export const generateContent = async (
   images: File[],
   platforms: Platform[],
   outputs: OutputType[],
+  frameworkOverride: Framework[] = [],
 ): Promise<GenerationResponse> => {
   if (images.length === 0) throw new Error('Please upload at least one product image.');
   if (!brief.productName.trim()) throw new Error('Please enter a product name.');
@@ -136,7 +157,7 @@ export const generateContent = async (
   if (outputs.length === 0) throw new Error('Please select at least one output type.');
 
   const imageParts = await Promise.all(images.map(fileToImagePart));
-  const prompt = buildPrompt(brief, platforms, outputs);
+  const prompt = buildPrompt(brief, platforms, outputs, frameworkOverride);
 
   const response = await ai.models.generateContent({
     model: MODEL,

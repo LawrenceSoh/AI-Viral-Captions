@@ -28,6 +28,7 @@ export interface ProductBrief {
   productDescription: string;
   sellingPoints: string[];
   callToAction: string;
+  brandVoice: string; // optional tone, e.g. "luxury", "playful", "bold"
 }
 
 // One stage of a framework-structured video script, e.g. { label: "Hook", text: "..." }.

@@ -56,6 +56,18 @@ export const FRAMEWORKS = [
   },
 ];
 
+// Quick-pick tone suggestions for the brand voice field.
+export const TONE_PRESETS = [
+  'Playful',
+  'Luxury',
+  'Bold',
+  'Friendly',
+  'Professional',
+  'Minimal',
+  'Edgy',
+  'Inspirational',
+];
+
 export const MAX_IMAGES = 5;
 export const MAX_IMAGE_SIZE_MB = 8; // per image, client-side base64 safety margin
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { ProductBrief } from '../types';
+import { TONE_PRESETS } from '../constants';
 
 interface ProductFormProps {
   brief: ProductBrief;
@@ -113,6 +114,35 @@ const ProductForm: React.FC<ProductFormProps> = ({ brief, onChange }) => {
           onChange={(e) => set('callToAction', e.target.value)}
           placeholder='e.g. "Link in bio", "DM me", "Book now"'
         />
+      </div>
+
+      <div>
+        <Label hint="optional">Brand voice / tone</Label>
+        <input
+          className={inputClass}
+          value={brief.brandVoice}
+          onChange={(e) => set('brandVoice', e.target.value)}
+          placeholder="e.g. Playful and witty, or luxury and refined"
+        />
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {TONE_PRESETS.map((tone) => {
+            const active = brief.brandVoice.trim().toLowerCase() === tone.toLowerCase();
+            return (
+              <button
+                key={tone}
+                type="button"
+                onClick={() => set('brandVoice', active ? '' : tone)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  active
+                    ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300'
+                    : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                }`}
+              >
+                {tone}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
