@@ -1,0 +1,13 @@
+# voice models (large, downloaded via scripts/download_voice.sh)
+assets/voices/*.onnx
+assets/voices/*.onnx.json
+assets/voices/MODEL_CARD
+# captured screenshots + rendered output
+assets/captures/*
+output/
+# secrets & auth
+.env
+client_secret.json
+token.json
+__pycache__/
+*.pyc

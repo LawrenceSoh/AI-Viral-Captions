@@ -1,0 +1,71 @@
+# Scheduled faceless-video pipeline.
+# Renders a draft video and (optionally) uploads it PRIVATELY to YouTube for
+# the human review-and-publish step. Nothing is ever made public automatically.
+#
+# Required repo secrets for the paid/live path (Settings → Secrets → Actions):
+#   GEMINI_API_KEY / OPENAI_API_KEY / ELEVENLABS_API_KEY   (as configured)
+#   YT_CLIENT_SECRET_B64  – base64 of client_secret.json
+#   YT_TOKEN_B64          – base64 of an already-authorised token.json
+# Leave secrets unset to do a dry (offline) render only.
+
+name: youtube-pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Video topic"
+        required: false
+        default: "5 AI tools that run a one-person accounting firm"
+  schedule:
+    - cron: "0 1 * * 2,5"   # Tue & Fri 01:00 UTC (2 pillars/week)
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: youtube-automation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install chromium
+
+      - name: Download offline voice
+        run: bash scripts/download_voice.sh
+
+      - name: Restore YouTube credentials (if present)
+        env:
+          CS: ${{ secrets.YT_CLIENT_SECRET_B64 }}
+          TK: ${{ secrets.YT_TOKEN_B64 }}
+        run: |
+          [ -n "$CS" ] && echo "$CS" | base64 -d > client_secret.json || true
+          [ -n "$TK" ] && echo "$TK" | base64 -d > token.json || true
+
+      - name: Render (and upload draft if credentials exist)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          TOPIC="${{ github.event.inputs.topic }}"
+          if [ -f token.json ]; then
+            python run.py --topic "${TOPIC:-5 AI tools that run a one-person accounting firm}" --upload
+          else
+            python run.py --topic "${TOPIC:-5 AI tools that run a one-person accounting firm}"
+          fi
+
+      - name: Save render as artifact for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: draft-video
+          path: |
+            youtube-automation/output/**/*.mp4
+            youtube-automation/output/**/thumbnail.jpg
+            youtube-automation/output/**/metadata.json

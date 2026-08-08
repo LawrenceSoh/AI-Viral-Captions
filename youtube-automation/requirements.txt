@@ -1,0 +1,12 @@
+# Core rendering pipeline (offline-capable)
+Pillow>=10.0
+pyyaml>=6.0
+requests>=2.31
+imageio-ffmpeg>=0.4.9      # bundles a full static ffmpeg (H.264/AAC)
+piper-tts>=1.2             # offline neural TTS (default voice provider)
+playwright>=1.40           # real tool-UI capture (run: playwright install chromium)
+
+# Upload step (optional — only needed for `--upload`)
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
