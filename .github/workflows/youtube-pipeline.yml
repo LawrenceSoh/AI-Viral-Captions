@@ -17,6 +17,14 @@ on:
         description: "Video topic"
         required: false
         default: "5 AI tools that run a one-person accounting firm"
+      voice:
+        description: "Voice provider (piper=free, openai, elevenlabs)"
+        required: false
+        default: "piper"
+      llm:
+        description: "Script provider (stub, gemini, anthropic)"
+        required: false
+        default: "stub"
   schedule:
     - cron: "0 1 * * 2,5"   # Tue & Fri 01:00 UTC (2 pillars/week)
 
@@ -53,6 +61,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          PROVIDER_VOICE: ${{ github.event.inputs.voice || 'piper' }}
+          PROVIDER_LLM: ${{ github.event.inputs.llm || 'stub' }}
         run: |
           TOPIC="${{ github.event.inputs.topic }}"
           if [ -f token.json ]; then

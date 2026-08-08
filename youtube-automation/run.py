@@ -36,6 +36,10 @@ def main() -> None:
     cfg = load_config()
     brand = Brand.from_config(cfg)
     prov = cfg["providers"]
+    # env overrides let CI / secrets flip providers without editing config.yaml
+    import os
+    prov["llm"] = os.environ.get("PROVIDER_LLM", prov["llm"])
+    prov["voice"] = os.environ.get("PROVIDER_VOICE", prov["voice"])
     fmt = args.format or cfg["video"]["format"]
     size = PILLAR if fmt == "pillar" else SHORT
     fps = int(cfg["video"]["fps"])
